@@ -1,0 +1,94 @@
+.data
+
+	digiteMensaje: .asciiz "Por favor, ingrese el mensaje que desea encriptar: "
+	digiteClaveMultiplicativa: .asciiz "\n Digite la clave multiplicativa que desea utilizar: "
+	digiteClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
+	
+	mensajeAEncriptar: .space 12
+
+.text
+	main:
+	
+		#Ingresar claves
+		jal leerClaves
+	
+		#Ingresar mensaje
+		jal leerMensaje
+		
+		jal recorrerString
+	
+	li $v0, 10
+	syscall
+	
+	#Declaracion de funciones ------------------------------------
+	leerClaves:
+		#Clave multiplicativa
+		#mostrar string
+		li $v0, 4
+		la $a0, digiteClaveMultiplicativa
+		syscall
+		
+		#leer entero
+		li $v0, 5
+		syscall
+		
+		#Hacer espacio en memoria y guardar
+		addi $sp, $sp, -4
+		sw $v0, 0($sp)
+		
+		#Clave aditiva
+		#mostrar string
+		li $v0, 4
+		la $a0, digiteClaveAditiva
+		syscall
+		
+		#leer entero
+		li $v0, 5
+		syscall
+		
+		#Hacer espacio en memoria y guardar
+		addi $sp, $sp, -4
+		sw $v0, 0($sp)
+	jr $ra
+	
+	leerMensaje:
+		#mostrar string
+		li $v0, 4
+		la $a0, digiteMensaje
+		syscall
+		
+		#leer string
+		li $v0, 8
+		la $a0, mensajeAEncriptar
+		li $a1, 12
+		syscall
+		
+    		lb $t0, 11($a0)              # Leer el último byte del string leído
+    		beqz $t0, endLeerMensaje     # Si ya es nulo, saltar
+    		sb $zero, 11($a0)            # Si no es nulo, añadir '\0' al final del string
+		
+		#Hacer espacio en memoria y guardar
+		addi $sp, $sp, -12
+		sw $a0, 0($sp)
+		
+		endLeerMensaje:
+	jr $ra
+
+	recorrerString:
+		la $s0, mensajeAEncriptar
+	
+		add $t1, $zero, $zero # inicializar i = 0
+		while:
+			add $t2, $t1, $s0
+			
+			lb $t3, 0($t2)
+			beq $t3, $zero, endWhile
+			
+			li $v0, 11
+			move $a0, $t3
+			syscall
+			
+			addi $t1, $t1, 1
+			j while
+		endWhile:
+	jr $ra
