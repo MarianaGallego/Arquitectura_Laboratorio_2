@@ -15,7 +15,7 @@
 		#Ingresar mensaje
 		jal leerMensaje
 		
-		jal recorrerString
+		jal encriptarMensaje
 	
 	li $v0, 10
 	syscall
@@ -77,47 +77,40 @@
 		endLeerMensaje:
 	jr $ra
 
-	recorrerString:
+	encriptarMensaje:
 		la $s0, mensajeAEncriptar
 		
 		#Aditiva
-		lw $t1, 0($sp)
+		lw $t0, 0($sp)
 		
 		#Multiplicativa
-		lw $t2, 4($sp)
+		lw $t1, 4($sp)
 		
-		add $t3, $zero, $zero # inicializar i = 0
+		add $t2, $zero, $zero # inicializar i = 0
 		while:
-			add $t4, $t3, $s0
+			add $t3, $t2, $s0
 			
-			lb $t5, 0($t4)
-			beq $t5, $zero, endWhile
-			
-
+			lb $t4, 0($t3)
+			beq $t4, $zero, endWhile
 			
 			# Convertir de ASCII a valor en el alfabeto (minúsculas)
-    			li $t6, 97                   # ASCII de 'a'
-    			sub $t7, $t5, $t6            # 'a' = 0, 'b' = 1, ..., 'z' = 25
+    			li $t5, 97                   # ASCII de 'a'
+    			sub $t6, $t4, $t5            # 'a' = 0, 'b' = 1, ..., 'z' = 25
 
     			# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
-    			mul $t7, $t7, $t2            # Multiplicar por a
-    			add $t7, $t7, $t1            # Sumar b (usar $t5 como clave aditiva)
-    			li $t8, 26                   # Tamaño del alfabeto (mod 26)
-    			rem $t7, $t7, $t8            # Tomar el módulo 26
+    			mul $t6, $t6, $t1            # Multiplicar por a
+    			add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
+    			li $t7, 26                   # Tamaño del alfabeto (mod 26)
+    			rem $t6, $t6, $t7            # Tomar el módulo 26
 
     			# Convertir de vuelta al valor ASCII (minúsculas)
-    			add $t5, $t7, $t6            # Volver al rango ASCII (sumar 97)
-			
-			
-			
-			
-			
+    			add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
 			
 			li $v0, 11
-			move $a0, $t5
+			move $a0, $t4
 			syscall
 			
-			addi $t3, $t3, 1
+			addi $t2, $t2, 1
 			j while
 		endWhile:
 	jr $ra
