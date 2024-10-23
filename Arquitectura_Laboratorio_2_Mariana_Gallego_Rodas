@@ -1,21 +1,25 @@
 .data
 
-	digiteMensaje: .asciiz "Por favor, ingrese el mensaje que desea encriptar: "
+	#filename: .asciiz "C:\Users\maria\OneDrive\Escritorio\Arquitectura_Laboratorio_2\input.txt"
+	filename: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
+	mensajeAEncriptar: .space 1024
+	error: .asciiz "No se leyó el archivo correctamente"
+
 	digiteClaveMultiplicativa: .asciiz "\n Digite la clave multiplicativa que desea utilizar: "
 	digiteClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
-	
-	mensajeAEncriptar: .space 12
+
 
 .text
 	main:
 	
 		#Ingresar claves
-		jal leerClaves
+		#jal leerClaves
 	
 		#Ingresar mensaje
 		jal leerMensaje
 		
-		jal encriptarMensaje
+		#Encriptar mensaje
+		#jal encriptarMensaje
 	
 	li $v0, 10
 	syscall
@@ -53,28 +57,32 @@
 	jr $ra
 	
 	leerMensaje:
-		#mostrar string
-		li $v0, 4
-		la $a0, digiteMensaje
-		syscall
-		
-		#leer string
-		li $v0, 8
-		la $a0, mensajeAEncriptar
-		li $a1, 12
-		syscall
-		
-    		lb $t0, 11($a0)              # Leer el último byte del string leído
-    		beqz $t0, endLeerMensaje     # Si ya es nulo, saltar
-    		sb $zero, 11($a0)            # Si no es nulo, añadir '\0' al final del string
-		
-		#Hacer espacio en memoria y guardar
-		addi $sp, $sp, -12
-		sw $a0, 0($sp)
-		
-		addi $sp, $sp, 20
-		
-		endLeerMensaje:
+		# Abrir el archivo
+    		li $v0, 13                  # System call para abrir un archivo
+    		la $a0, filename             # Nombre del archivo
+    		li $a1, 0                    # Modo de lectura (0 = read)
+    		li $a2, 0                    # Sin permisos adicionales
+    		syscall
+    		move $t0, $v0                # Guardar el file descriptor en $t0
+
+    		# Verificar si el archivo se abrió correctamente
+    		bltz $t0, errorMsj              # Si el descriptor es negativo, error al abrir archivo
+    		
+    		# Leer el contenido del archivo
+    		li $v0, 14                  # System call para leer archivo
+    		move $a0, $t0                # File descriptor del archivo
+    		la $a1, mensajeAEncriptar               # Buffer donde almacenar el contenido
+    		li $a2, 1024                  # Número máximo de bytes a leer
+    		syscall
+
+    		# Guardar el número de bytes leídos
+    		move $t1, $v0                # Guardar el número de caracteres leídos en $t1
+	jr $ra
+	
+	errorMsj:
+		li $v0, 4           # System call para imprimir string
+    		la $a0, error       # Cargar mensaje de error
+    		syscall
 	jr $ra
 
 	encriptarMensaje:
