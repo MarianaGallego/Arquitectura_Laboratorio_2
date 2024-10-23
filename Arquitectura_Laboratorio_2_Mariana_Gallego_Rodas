@@ -75,8 +75,41 @@
     		li $a2, 1024                  # Número máximo de bytes a leer
     		syscall
 
-    		# Guardar el número de bytes leídos
-    		move $t1, $v0                # Guardar el número de caracteres leídos en $t1
+		# Guardar el string leído en la pila byte por byte usando `sb`
+		la $t1, mensajeAEncriptar      # Cargar la dirección del buffer donde está el string
+		addi $sp, $sp, -1024           # Reservar espacio en la pila para 1024 bytes
+		li $t2, 0                      # Contador de bytes leídos
+
+	guardarLoop:
+		lb $t3, 0($t1)                 # Cargar un byte del buffer
+		sb $t3, 0($sp)                 # Guardar el byte en la pila
+
+		# Incrementar el contador y avanzar
+		addi $t1, $t1, 1               # Avanzar al siguiente byte en el buffer
+		addi $sp, $sp, 1               # Avanzar en la pila
+		addi $t2, $t2, 1               # Incrementar el contador
+		
+		# Verificar si se terminó el string (terminador nulo '\0')
+		beqz $t3, endGuardar           # Si encontramos un null byte, salir del loop
+		
+		j guardarLoop                  # Repetir el ciclo para los siguientes bytes
+		
+	endGuardar:
+		# Restaurar el puntero de la pila al inicio del string guardado
+		sub $sp, $sp, $t2
+
+		# Mostrar el contenido del archivo (string leído) byte por byte
+		mostrarLoop:
+		lb $a0, 0($sp)                 # Cargar un byte desde la pila
+		beqz $a0, endMostrar           # Si es null terminador, salir
+		li $v0, 11                     # Syscall para imprimir carácter
+		syscall
+		
+		# Avanzar
+		addi $sp, $sp, 1               # Mover la pila hacia adelante
+		j mostrarLoop                  # Repetir el ciclo
+		
+	endMostrar:
 	jr $ra
 	
 	errorMsj:
