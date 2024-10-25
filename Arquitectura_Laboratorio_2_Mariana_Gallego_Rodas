@@ -1,6 +1,7 @@
 .data
 
 	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
+	outputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
 	mensajeAEncriptar: .space 1024
 	MensajeDeError: .asciiz "No se leyó el archivo correctamente"
 
@@ -21,6 +22,8 @@
 		
 		#Encriptar mensaje
 		jal encriptarMensaje
+		
+		jal generarDocumento
 	
 	li $v0, 10
 	syscall
@@ -161,6 +164,49 @@
 			j encryptWhile
 		endEncryptWhile:
 		
+	jr $ra
+	
+	generarDocumento:
+	
+		# Abrir el archivo de salida en modo de escritura
+    		li $v0, 13
+    		la $a0, outputFile
+    		li $a1, 1               # Modo de escritura
+    		li $a2, 0               # Permisos (no necesarios)
+    		syscall
+    		move $t0, $v0           # Guardar el descriptor de archivo en $t0
+
+    		bltz $t0, errorHandler  # Si hubo error al abrir el archivo, saltar a errorHandler
+
+    		# Escribir el mensaje cifrado en el archivo
+    		addi $t1, $sp, 8        # $t1 apunta al inicio del mensaje cifrado en la pila
+    		writeLoop:
+        		lb $a1, 0($t1)      # Leer un byte del mensaje cifrado
+        		beqz $a1, endWrite  # Si es el fin del mensaje, salir del bucle
+
+        		# Crear un buffer para escribir el byte
+        		addi $sp, $sp, -4    # Reservar espacio en la pila
+        		sb $a1, 0($sp)       # Almacenar el byte en la pila
+
+        		# Escribir el byte en el archivo
+        		li $v0, 15          # Syscall de escribir en archivo
+        		move $a0, $t0       # Descriptor del archivo
+        		la $a1, 0($sp)      # Dirección del buffer (byte a escribir)
+        		li $a2, 1           # Escribir un byte
+        		syscall
+
+        		# Liberar el espacio de la pila
+        		addi $sp, $sp, 4
+
+        		# Avanzar al siguiente byte
+        		addi $t1, $t1, 1
+        		j writeLoop
+
+    		endWrite:
+        	# Cerrar el archivo de salida
+        	li $v0, 16
+        	move $a0, $t0           # Descriptor del archivo a cerrar
+        	syscall
 	jr $ra
 	
 	
