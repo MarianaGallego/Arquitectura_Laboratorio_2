@@ -160,6 +160,8 @@
 			move $a0, $t4
 			syscall
 			
+			sb $a0, 0($t3) #En el mismo lugar donde estaba el byte, lo guarda pero cifrado
+			
 			addi $t2, $t2, 1
 			j encryptWhile
 		endEncryptWhile:
