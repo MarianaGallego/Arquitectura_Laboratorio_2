@@ -1,12 +1,11 @@
 .data
 
-	#filename: .asciiz "C:\Users\maria\OneDrive\Escritorio\Arquitectura_Laboratorio_2\input.txt"
 	filename: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
 	mensajeAEncriptar: .space 1024
-	error: .asciiz "No se leyó el archivo correctamente"
+	errorMessage: .asciiz "No se leyó el archivo correctamente"
 
-	digiteClaveMultiplicativa: .asciiz "\n Digite la clave multiplicativa que desea utilizar: "
-	digiteClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
+	ClaveMultiplicativa: .asciiz "\n Digite la clave multiplicativa que desea utilizar: "
+	ClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
 
 
 .text
@@ -24,12 +23,16 @@
 	li $v0, 10
 	syscall
 	
-	#Declaracion de funciones ------------------------------------
+
+	#------------------------------------ DECLARACIÓN DE FUNCIONES ------------------------------------#
+
 	leerClaves:
-		#Clave multiplicativa
+
+		#---------------------- Clave multiplicativa ----------------------#
+
 		#mostrar string
 		li $v0, 4
-		la $a0, digiteClaveMultiplicativa
+		la $a0, ClaveMultiplicativa
 		syscall
 		
 		#leer entero
@@ -39,11 +42,13 @@
 		#Hacer espacio en memoria y guardar
 		addi $sp, $sp, -4
 		sw $v0, 0($sp)
+
 		
-		#Clave aditiva
+		#------------------------- Clave aditiva -------------------------#
+
 		#mostrar string
 		li $v0, 4
-		la $a0, digiteClaveAditiva
+		la $a0, ClaveAditiva
 		syscall
 		
 		#leer entero
@@ -56,96 +61,111 @@
 		
 	jr $ra
 	
-	leerMensaje:
-		# Abrir el archivo
-    		li $v0, 13                  # System call para abrir un archivo
-    		la $a0, filename             # Nombre del archivo
-    		li $a1, 0                    # Modo de lectura (0 = read)
-    		li $a2, 0                    # Sin permisos adicionales
-    		syscall
-    		move $t0, $v0                # Guardar el file descriptor en $t0
 
-    		# Verificar si el archivo se abrió correctamente
-    		bltz $t0, errorMsj              # Si el descriptor es negativo, error al abrir archivo
+
+	leerMensaje:
+
+		#------------------------- Abrir archivo -------------------------#
+
+		# Abrir el archivo
+    		li $v0, 13
+    		la $a0, filename
+    		li $a1, 0
+    		li $a2, 0
+    		syscall
+    		move $t0, $v0
+
     		
-    		# Leer el contenido del archivo
-    		li $v0, 14                  # System call para leer archivo
-    		move $a0, $t0                # File descriptor del archivo
-    		la $a1, mensajeAEncriptar               # Buffer donde almacenar el contenido
-    		li $a2, 1024                  # Número máximo de bytes a leer
+    		bltz $t0, errorHandler
+    		
+    		#------------------------- Leer archivo -------------------------#
+
+    		li $v0, 14
+    		move $a0, $t0
+    		la $a1, mensajeAEncriptar
+    		li $a2, 1024
     		syscall
 
 		# Guardar el string leído en la pila byte por byte usando `sb`
-		la $t1, mensajeAEncriptar      # Cargar la dirección del buffer donde está el string
-		addi $sp, $sp, -1024           # Reservar espacio en la pila para 1024 bytes
-		li $t2, 0                      # Contador de bytes leídos
+		la $t1, mensajeAEncriptar
+		addi $sp, $sp, -1024
+		li $t2, 0
 
-	guardarLoop:
-		lb $t3, 0($t1)                 # Cargar un byte del buffer
-		sb $t3, 0($sp)                 # Guardar el byte en la pila
 
-		# Incrementar el contador y avanzar
-		addi $t1, $t1, 1               # Avanzar al siguiente byte en el buffer
-		addi $sp, $sp, 1               # Avanzar en la pila
-		addi $t2, $t2, 1               # Incrementar el contador
+		#----------------- Guardar cada byte en la pila -----------------#
+
+		storeWhile:
+			lb $t3, 0($t1)
+			sb $t3, 0($sp)
+
+			# Incrementar el contador y avanzar
+			addi $t1, $t1, 1
+			addi $sp, $sp, 1
+			addi $t2, $t2, 1
 		
-		# Verificar si se terminó el string (terminador nulo '\0')
-		beqz $t3, endGuardar           # Si encontramos un null byte, salir del loop
+			beqz $t3, endStoreWhile
 		
-		j guardarLoop                  # Repetir el ciclo para los siguientes bytes
-		
-	endGuardar:
+			j storeWhile
+		endStoreWhile:
+
 		# Restaurar el puntero de la pila al inicio del string guardado
 		sub $sp, $sp, $t2
 
-		# Mostrar el contenido del archivo (string leído) byte por byte
+
+		#-------------- Mostrar cada byte que hay la pila --------------#
+
 		mostrarLoop:
-		lb $a0, 0($sp)                 # Cargar un byte desde la pila
-		beqz $a0, endMostrar           # Si es null terminador, salir
-		li $v0, 11                     # Syscall para imprimir carácter
-		syscall
+			lb $a0, 0($sp)                 # Cargar un byte desde la pila
+			beqz $a0, endMostrar           # Si es null terminador, salir
+			li $v0, 11                     # Syscall para imprimir carácter
+			syscall
 		
-		# Avanzar
-		addi $sp, $sp, 1               # Mover la pila hacia adelante
-		j mostrarLoop                  # Repetir el ciclo
-		
-	endMostrar:
+			# Avanzar
+			addi $sp, $sp, 1               # Mover la pila hacia adelante
+			j mostrarLoop                  # Repetir el ciclo
+		endMostrar:
 	jr $ra
 	
-	errorMsj:
-		li $v0, 4           # System call para imprimir string
-    		la $a0, error       # Cargar mensaje de error
+	errorHandler:
+		li $v0, 4
+    		la $a0, errorMessage
     		syscall
 	jr $ra
 
+
+
 	encriptarMensaje:
+
 		la $s0, mensajeAEncriptar
 		
-		#Aditiva
+		#Clave aditiva
 		lw $t0, 0($sp)
 		
-		#Multiplicativa
+		#Clave multiplicativa
 		lw $t1, 4($sp)
 		
 		add $t2, $zero, $zero # inicializar i = 0
+
 		while:
 			add $t3, $t2, $s0
 			
 			lb $t4, 0($t3)
 			beq $t4, $zero, endWhile
 			
-			# Convertir de ASCII a valor en el alfabeto (minúsculas)
-    			li $t5, 97                   # ASCII de 'a'
-    			sub $t6, $t4, $t5            # 'a' = 0, 'b' = 1, ..., 'z' = 25
+			#----------------- Convertir de ASCII a valor en el alfabeto -----------------#
 
-    			# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
-    			mul $t6, $t6, $t1            # Multiplicar por a
-    			add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
-    			li $t7, 26                   # Tamaño del alfabeto (mod 26)
-    			rem $t6, $t6, $t7            # Tomar el módulo 26
+    			li $t5, 97
+    			sub $t6, $t4, $t5
 
-    			# Convertir de vuelta al valor ASCII (minúsculas)
-    			add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
+    			# Aplicar el cifrado afín
+    			mul $t6, $t6, $t1
+    			add $t6, $t6, $t0
+    			li $t7, 26
+    			rem $t6, $t6, $t7
+
+			#----------------- Convertir de vuelta al valor ASCII -----------------#
+
+    			add $t4, $t6, $t5
 			
 			li $v0, 11
 			move $a0, $t4
