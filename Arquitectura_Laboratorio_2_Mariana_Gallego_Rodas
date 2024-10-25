@@ -4,18 +4,22 @@
 	mensajeAEncriptar: .space 1024
 	errorMessage: .asciiz "No se leyó el archivo correctamente"
 
-	ClaveMultiplicativa: .asciiz "\n Digite la clave multiplicativa que desea utilizar: "
+	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa que desea utilizar: "
 	ClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
 
 
 .text
 	main:
 	
-		#Ingresar claves
-		#jal leerClaves
-	
-		#Ingresar mensaje
+	#Ingresar mensaje
 		jal leerMensaje
+	
+		#Ingresar claves
+		jal leerClaves
+	
+		
+		
+		jal mostrarDatos
 		
 		#Encriptar mensaje
 		#jal encriptarMensaje
@@ -58,7 +62,6 @@
 		#Hacer espacio en memoria y guardar
 		addi $sp, $sp, -4
 		sw $v0, 0($sp)
-		
 	jr $ra
 	
 
@@ -110,68 +113,44 @@
 
 		# Restaurar el puntero de la pila al inicio del string guardado
 		sub $sp, $sp, $t2
-
-
-		#-------------- Mostrar cada byte que hay la pila --------------#
-
-		mostrarLoop:
-			lb $a0, 0($sp)                 # Cargar un byte desde la pila
-			beqz $a0, endMostrar           # Si es null terminador, salir
-			li $v0, 11                     # Syscall para imprimir carácter
-			syscall
 		
-			# Avanzar
-			addi $sp, $sp, 1               # Mover la pila hacia adelante
-			j mostrarLoop                  # Repetir el ciclo
-		endMostrar:
 	jr $ra
+	
+	
 	
 	errorHandler:
 		li $v0, 4
     		la $a0, errorMessage
     		syscall
 	jr $ra
-
-
-
-	encriptarMensaje:
-
-		la $s0, mensajeAEncriptar
-		
+	
+	
+	mostrarDatos:
+	
 		#Clave aditiva
-		lw $t0, 0($sp)
-		
-		#Clave multiplicativa
-		lw $t1, 4($sp)
-		
-		add $t2, $zero, $zero # inicializar i = 0
+		lb $a0, 0($sp)
+    		li $v0, 1
+    		syscall
+    		
+    		#Clave multiplicativa
+    		lb $a0, 4($sp)
+    		li $v0, 1
+    		syscall
+    		
+    		addi $sp, $sp, 8
+	
+		#-------------- Mostrar cada byte que hay la pila --------------#
 
-		while:
-			add $t3, $t2, $s0
-			
-			lb $t4, 0($t3)
-			beq $t4, $zero, endWhile
-			
-			#----------------- Convertir de ASCII a valor en el alfabeto -----------------#
-
-    			li $t5, 97
-    			sub $t6, $t4, $t5
-
-    			# Aplicar el cifrado afín
-    			mul $t6, $t6, $t1
-    			add $t6, $t6, $t0
-    			li $t7, 26
-    			rem $t6, $t6, $t7
-
-			#----------------- Convertir de vuelta al valor ASCII -----------------#
-
-    			add $t4, $t6, $t5
-			
+		mostrarLoop:
+			lb $a0, 0($sp)
+			beqz $a0, endMostrar
 			li $v0, 11
-			move $a0, $t4
 			syscall
-			
-			addi $t2, $t2, 1
-			j while
-		endWhile:
+		
+			# Avanzar
+			addi $sp, $sp, 1
+			j mostrarLoop
+		endMostrar:
+		
+		
 	jr $ra
