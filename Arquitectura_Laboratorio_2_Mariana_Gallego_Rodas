@@ -1,28 +1,26 @@
 .data
 
-	filename: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
+	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
 	mensajeAEncriptar: .space 1024
-	errorMessage: .asciiz "No se leyó el archivo correctamente"
+	MensajeDeError: .asciiz "No se leyó el archivo correctamente"
 
 	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa que desea utilizar: "
 	ClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
 
-
 .text
 	main:
 	
-	#Ingresar mensaje
+		#Ingresar mensaje
 		jal leerMensaje
 	
 		#Ingresar claves
 		jal leerClaves
 	
-		
-		
-		jal mostrarDatos
+		#Mostrar datos
+		#jal mostrarDatos
 		
 		#Encriptar mensaje
-		#jal encriptarMensaje
+		jal encriptarMensaje
 	
 	li $v0, 10
 	syscall
@@ -72,7 +70,7 @@
 
 		# Abrir el archivo
     		li $v0, 13
-    		la $a0, filename
+    		la $a0, inputFile
     		li $a1, 0
     		li $a2, 0
     		syscall
@@ -119,9 +117,50 @@
 	
 	
 	errorHandler:
+	
 		li $v0, 4
-    		la $a0, errorMessage
+    		la $a0, MensajeDeError
     		syscall
+    		
+	jr $ra
+	
+	
+	encriptarMensaje:
+	
+		addi $s0, $sp, 8
+	
+		lw $t0, 0($sp)#Aditiva
+		lw $t1, 4($sp)#Multiplicativa
+		
+		add $t2, $zero, $zero # inicializar i = 0
+		
+		encryptWhile:
+			add $t3, $t2, $s0
+			
+			lb $t4, 0($t3)
+			beq $t4, $zero, endEncryptWhile
+			
+			# Convertir de ASCII a valor en el alfabeto (minúsculas)
+    			li $t5, 97                   # ASCII de 'a'
+    			sub $t6, $t4, $t5            # 'a' = 0, 'b' = 1, ..., 'z' = 25
+
+    			# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
+    			mul $t6, $t6, $t1            # Multiplicar por a
+    			add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
+    			li $t7, 26                   # Tamaño del alfabeto (mod 26)
+    			rem $t6, $t6, $t7            # Tomar el módulo 26
+
+    			# Convertir de vuelta al valor ASCII (minúsculas)
+    			add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
+			
+			li $v0, 11
+			move $a0, $t4
+			syscall
+			
+			addi $t2, $t2, 1
+			j encryptWhile
+		endEncryptWhile:
+		
 	jr $ra
 	
 	
