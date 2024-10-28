@@ -89,6 +89,14 @@
     		la $a1, mensajeAEncriptar
     		li $a2, 1024
     		syscall
+    		
+    		#------------------------- Llamar validador -------------------------#
+    		move $t8, $ra #Guardar $ra de esta función porque al llamar la otra se cambia
+    		
+    		la $a3, mensajeAEncriptar
+    		jal validarCantidadBytes
+    		
+    		move $ra, $t8 #Recuperar $ra
 
 		# Guardar el string leído en la pila byte por byte usando `sb`
 		la $t1, mensajeAEncriptar
@@ -117,6 +125,28 @@
 		
 	jr $ra
 	
+	
+	validarCantidadBytes:
+		li $t4, 0
+    		move $t5, $a3
+    		
+    		contarLoop:
+			lb $t6, 0($t5)
+			beq $t6, 0, endContarLoop
+		
+			# Avanzar
+			addi $t4, $t4, 1
+			addi $t5, $t5, 1
+			j contarLoop
+		endContarLoop:
+		
+		#li $t7, -1
+		#mul $t4, $t4, $t7
+		
+		li $v0, 1
+		move $a0, $t4
+		syscall
+	jr $ra
 	
 	
 	errorHandler:
