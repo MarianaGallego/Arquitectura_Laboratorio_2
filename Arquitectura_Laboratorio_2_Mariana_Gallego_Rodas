@@ -3,10 +3,12 @@
 	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
 	outputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
 	mensajeAEncriptar: .space 1024
-	MensajeDeError: .asciiz "No se leyó el archivo correctamente"
 
 	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa que desea utilizar: "
 	ClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
+
+	MensajeDeErrorDocumento: .asciiz "No se pudo leer el documento"
+	MensajeDeErrorCantidadBytes: .asciiz "La cantidad de Bytes en el documento excede el valor máximo permitido"
 
 .text
 	main:
@@ -80,7 +82,7 @@
     		move $t0, $v0
 
     		
-    		bltz $t0, errorHandler
+    		bltz $t0, errorHandlerDocumento
     		
     		#------------------------- Leer archivo -------------------------#
 
@@ -135,24 +137,38 @@
 			beq $t6, 0, endContarLoop
 		
 			# Avanzar
-			addi $t4, $t4, 1
+			addi $t4, $t4, 1 #contador
 			addi $t5, $t5, 1
 			j contarLoop
 		endContarLoop:
 		
-		#li $t7, -1
-		#mul $t4, $t4, $t7
-		
-		li $v0, 1
-		move $a0, $t4
-		syscall
+		li $t7, 1024
+		slt $t9, $t7, $t4 # $t9 = 0 si $t4 <= $t7
+			bne $t9, $zero, else
+				jr $ra	
+			else:
+				b errorHandlerDocumento
 	jr $ra
 	
 	
-	errorHandler:
+	errorHandlerDocumento:
 	
 		li $v0, 4
-    		la $a0, MensajeDeError
+    		la $a0, MensajeDeErrorDocumento
+    		syscall
+    		
+    		li $v0, 10
+    		syscall
+    		
+	jr $ra
+	
+	errorHandlerCantidadBytes:
+	
+		li $v0, 4
+    		la $a0, MensajeDeErrorCantidadBytes
+    		syscall
+    		
+    		li $v0, 10
     		syscall
     		
 	jr $ra
@@ -208,7 +224,7 @@
     		syscall
     		move $t0, $v0           # Guardar el descriptor de archivo en $t0
 
-    		bltz $t0, errorHandler  # Si hubo error al abrir el archivo, saltar a errorHandler
+    		bltz $t0, errorHandlerDocumento  # Si hubo error al abrir el archivo, saltar a errorHandlerDocumento
 
     		# Escribir el mensaje cifrado en el archivo
     		addi $t1, $sp, 8        # $t1 apunta al inicio del mensaje cifrado en la pila
