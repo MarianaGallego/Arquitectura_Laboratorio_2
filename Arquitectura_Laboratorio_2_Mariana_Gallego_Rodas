@@ -142,35 +142,12 @@
 			j contarLoop
 		endContarLoop:
 		
-		li $t7, 1024
+		li $t7, 1025
 		slt $t9, $t7, $t4 # $t9 = 0 si $t4 <= $t7
 			bne $t9, $zero, else
 				jr $ra	
 			else:
-				b errorHandlerDocumento
-	jr $ra
-	
-	
-	errorHandlerDocumento:
-	
-		li $v0, 4
-    		la $a0, MensajeDeErrorDocumento
-    		syscall
-    		
-    		li $v0, 10
-    		syscall
-    		
-	jr $ra
-	
-	errorHandlerCantidadBytes:
-	
-		li $v0, 4
-    		la $a0, MensajeDeErrorCantidadBytes
-    		syscall
-    		
-    		li $v0, 10
-    		syscall
-    		
+				j errorHandlerCantidadBytes
 	jr $ra
 	
 	
@@ -286,4 +263,28 @@
 		endMostrar:
 		
 		
+	jr $ra
+	
+	#------------------------------------ ERROR HANDLERS ------------------------------------#
+	
+	errorHandlerDocumento:
+	
+		li $v0, 4
+    		la $a0, MensajeDeErrorDocumento
+    		syscall
+    		
+    		li $v0, 10
+    		syscall
+    		
+	jr $ra
+	
+	errorHandlerCantidadBytes:
+	
+		li $v0, 4
+    		la $a0, MensajeDeErrorCantidadBytes
+    		syscall
+    		
+    		li $v0, 10
+    		syscall
+    		
 	jr $ra
