@@ -18,13 +18,11 @@
 	
 		#Ingresar claves
 		jal leerClaves
-	
-		#Mostrar datos
-		#jal mostrarDatos
 		
 		#Encriptar mensaje
 		jal encriptarMensaje
 		
+		#Generar documento
 		jal generarDocumento
 	
 	li $v0, 10
@@ -48,7 +46,7 @@
 		
 		#Hacer espacio en memoria y guardar
 		addi $sp, $sp, -4
-		sw $v0, 0($sp)
+		sb $v0, 0($sp)
 
 		
 		#------------------------- Clave aditiva -------------------------#
@@ -64,7 +62,7 @@
 		
 		#Hacer espacio en memoria y guardar
 		addi $sp, $sp, -4
-		sw $v0, 0($sp)
+		sb $v0, 0($sp)
 	jr $ra
 	
 
@@ -100,13 +98,10 @@
     		
     		move $ra, $t8 #Recuperar $ra
 
-		# Guardar el string leído en la pila byte por byte usando `sb`
-		la $t1, mensajeAEncriptar
-		addi $sp, $sp, -1024
-		li $t2, 0
-
-
 		#----------------- Guardar cada byte en la pila -----------------#
+		la $t1, mensajeAEncriptar
+		add $sp, $sp, $t4
+		li $t2, 0
 
 		storeWhile:
 			lb $t3, 0($t1)
@@ -129,6 +124,7 @@
 	
 	
 	validarCantidadBytes:
+	
 		li $t4, 0
     		move $t5, $a3
     		
@@ -148,6 +144,7 @@
 				jr $ra	
 			else:
 				j errorHandlerCantidadBytes
+				
 	jr $ra
 	
 	
@@ -155,8 +152,8 @@
 	
 		addi $s0, $sp, 8
 	
-		lw $t0, 0($sp)#Aditiva
-		lw $t1, 4($sp)#Multiplicativa
+		lb $t0, 0($sp)#Aditiva
+		lb $t1, 4($sp)#Multiplicativa
 		
 		add $t2, $zero, $zero # inicializar i = 0
 		
@@ -234,36 +231,6 @@
         	syscall
 	jr $ra
 	
-	
-	mostrarDatos:
-	
-		#Clave aditiva
-		lb $a0, 0($sp)
-    		li $v0, 1
-    		syscall
-    		
-    		#Clave multiplicativa
-    		lb $a0, 4($sp)
-    		li $v0, 1
-    		syscall
-    		
-    		addi $sp, $sp, 8
-	
-		#-------------- Mostrar cada byte que hay la pila --------------#
-
-		mostrarLoop:
-			lb $a0, 0($sp)
-			beqz $a0, endMostrar
-			li $v0, 11
-			syscall
-		
-			# Avanzar
-			addi $sp, $sp, 1
-			j mostrarLoop
-		endMostrar:
-		
-		
-	jr $ra
 	
 	#------------------------------------ ERROR HANDLERS ------------------------------------#
 	
