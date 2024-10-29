@@ -170,22 +170,33 @@
     			li $t5, 97                   # ASCII de 'a'
     			sub $t6, $t4, $t5            # 'a' = 0, 'b' = 1, ..., 'z' = 25
     			
-    			slt $t8, $t6, $zero # $t8 = 1 $t6 < $t5
-    				bne $t8, $zero, elseCondicional
-    					
-    					# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
-    					mul $t6, $t6, $t1            # Multiplicar por a
-    					add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
-    					li $t7, 26                   # Tamaño del alfabeto (mod 26)
-    					rem $t6, $t6, $t7            # Tomar el módulo 26
+    			#----------------- Validar mayúsculas y minúsculas -----------------#
+    			
+    			slt $t8, $t6, $zero # $t8 = 1 $t6 < 0
+    			bne $t8, $zero, elseCondicional	
+    				# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
+    				mul $t6, $t6, $t1            # Multiplicar por a
+    				add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
+    				li $t7, 26                   # Tamaño del alfabeto (mod 26)
+    				rem $t6, $t6, $t7            # Tomar el módulo 26
 
-    					# Convertir de vuelta al valor ASCII (minúsculas)
-    					add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
+    				# Convertir de vuelta al valor ASCII (minúsculas)
+    				add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
     					
-    				j endCondicional
-    				elseCondicional:
-    					jal errorHandlerMayuscula
-    				endCondicional:
+    			j endCondicional
+    			elseCondicional:
+    					
+    				sub $t6, $t4, 65          # Convertir el carácter de ASCII a un valor entre 0 y 25 (A=0, B=1,...)
+    					
+    				mul $t6, $t6, $t1            # Multiplicar por a
+    				add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
+    				li $t7, 26                   # Tamaño del alfabeto (mod 26)
+    				rem $t6, $t6, $t7            # Tomar el módulo 26
+
+    				# Convertir de vuelta al valor ASCII (minúsculas)
+    				addi $t4, $t6, 65            # Volver al rango ASCII (sumar 65)
+    					
+    			endCondicional:
 
 			
 			li $v0, 11
@@ -199,6 +210,7 @@
 		endEncryptWhile:
 		
 	jr $ra
+	
 	
 	generarDocumento:
 	
