@@ -9,7 +9,6 @@
 
 	MensajeDeErrorDocumento: .asciiz "No se pudo leer el documento"
 	MensajeDeErrorCantidadBytes: .asciiz "La cantidad de Bytes en el documento excede el valor máximo permitido"
-	MensajeDeErrorMayuscula: .asciiz "Hay una mayuscula"
 
 .text
 	main:
@@ -158,8 +157,6 @@
 		
 		add $t2, $zero, $zero # inicializar i = 0
 		
-		#li $t8, 0 #Cuando funcione mirar si se puede borrar
-		
 		encryptWhile:
 			add $t3, $t2, $s0
 			
@@ -273,17 +270,6 @@
 	
 		li $v0, 4
     		la $a0, MensajeDeErrorCantidadBytes
-    		syscall
-    		
-    		li $v0, 10
-    		syscall
-    		
-	jr $ra
-	
-	errorHandlerMayuscula:
-	
-		li $v0, 4
-    		la $a0, MensajeDeErrorMayuscula
     		syscall
     		
     		li $v0, 10
