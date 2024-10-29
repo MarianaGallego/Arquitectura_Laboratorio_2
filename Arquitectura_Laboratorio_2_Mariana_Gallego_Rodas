@@ -35,10 +35,15 @@
 
 	#---------------------------------------- DECLARACIÓN DE FUNCIONES ----------------------------------------#
 
+
+	# Muestra mensaje al usuario,
+	# lee los valores de cada clave
+	# y los almacena en la pila con
+	# ayuda del Stack Pointer ($sp)
+	# y utilizando el Store Byte (sb)
 	leerClaves:
 
 		#---------------------- Clave multiplicativa ----------------------#
-
 		li $v0, 4
 		la $a0, ClaveMultiplicativa
 		syscall
@@ -49,9 +54,7 @@
 		addi $sp, $sp, -4
 		sb $v0, 0($sp)
 
-		
 		#------------------------- Clave aditiva -------------------------#
-
 		li $v0, 4
 		la $a0, ClaveAditiva
 		syscall
@@ -61,14 +64,21 @@
 		
 		addi $sp, $sp, -4
 		sb $v0, 0($sp)
+		
 	jr $ra
 	
 
-
+	# Abre el archivo que contiene el mensaje
+	# a encriptar, y almacena los caracteres en
+	# la pila con ayuda del Stack Pointer ($sp).
+	# Los registros $t0 a $t3 almacenan el resultado
+	# de si se pudo abrir el archivo, el valor de
+	# $ra para cuando se va a llamar una función,
+	# el mensaje que se leyó, los bytes que se leen
+	# y los valores que controlan el recorrido del mensaje.
 	leerMensaje:
 
 		#------------------------- Abrir archivo -------------------------#
-
     		li $v0, 13
     		la $a0, inputFile
     		li $a1, 0
@@ -80,7 +90,6 @@
     		bltz $t0, errorHandlerDocumento
     		
     		#------------------------- Leer archivo -------------------------#
-
     		li $v0, 14
     		move $a0, $t0
     		la $a1, mensajeAEncriptar
@@ -100,7 +109,7 @@
 		add $sp, $sp, $t4
 		li $t2, 0
 
-		storeWhile:
+		guardarWhile:
 			lb $t3, 0($t1)
 			sb $t3, 0($sp)
 
@@ -108,29 +117,37 @@
 			addi $sp, $sp, 1
 			addi $t2, $t2, 1
 		
-			beqz $t3, endStoreWhile
+			beqz $t3, endGuardarWhile
 		
-			j storeWhile
-		endStoreWhile:
+			j guardarWhile
+		endGuardarWhile:
 
 		sub $sp, $sp, $t2
 		
 	jr $ra
 	
 	
+	# Verifica que el contenido del documento
+	# de entrada no supere los 1024 bytes.
+	# Los registros $t4 a $t9 almacenan
+	# los bytes que se leen, la variable
+	# que controla el ciclo que recorre
+	# los caracteres del mensaje y los
+	# valores que retornan las operaciones
+	# condicionales
 	validarCantidadBytes:
 	
 		li $t4, 0
     		move $t5, $a3
     		
-    		contarLoop:
+    		contarWhile:
 			lb $t6, 0($t5)
-			beq $t6, 0, endContarLoop
+			beq $t6, 0, endContarWhile
 		
 			addi $t4, $t4, 1
 			addi $t5, $t5, 1
-			j contarLoop
-		endContarLoop:
+			j contarWhile
+		endContarWhile:
 		
 		li $t7, 1025
 		slt $t9, $t7, $t4
@@ -142,6 +159,16 @@
 	jr $ra
 	
 	
+	# Encripta el mensaje que se obtuvo
+	# del documento de entrada aplicando
+	# el método Afín y utilizando las
+	# claves ingresadas por el usuario.
+	# Los registros $t0 a $t8 almacenan
+	# los bytes que se leen, la variable
+	# que controla el ciclo que recorre
+	# los caracteres del mensaje y
+	# los resultados de las operaciones
+	# que se realizan para aplicar el método Afin
 	encriptarMensaje:
 	
 		addi $s0, $sp, 8
@@ -151,18 +178,16 @@
 		
 		add $t2, $zero, $zero
 		
-		encryptWhile:
+		encriptarWhile:
 			add $t3, $t2, $s0
 			
 			lb $t4, 0($t3)
-			beq $t4, $zero, endEncryptWhile
+			beq $t4, $zero, endEncriptarWhile
 			
     			li $t5, 97
     			sub $t6, $t4, $t5
     		
-    		
-    			#----------------- Validar mayúsculas y minúsculas -----------------#
-    			   			
+    			#----------------- Validar mayúsculas y minúsculas -----------------#		
     			slt $t8, $t6, $zero
     			bne $t8, $zero, elseCondicional	
 
@@ -194,12 +219,22 @@
 			sb $a0, 0($t3)
 			
 			addi $t2, $t2, 1
-			j encryptWhile
-		endEncryptWhile:
+			j encriptarWhile
+		endEncriptarWhile:
 	
 	jr $ra
 	
 	
+	# Recorre la pila con el mensaje
+	# encriptado y escribe cada byte
+	# leído en el documento de salida.
+	# Los registros $t0 a $t1 almacenan
+	# El resultado de si se pudo abrir
+	# el archivo y la posición de memoria
+	# a partir de la que se encuentra el
+	# mensaje encriptado.
+	# El registro $a1 almacena los bytes
+	# que se van cargando
 	generarDocumento:
 	
     		li $v0, 13
@@ -212,9 +247,9 @@
     		bltz $t0, errorHandlerDocumento
 
     		addi $t1, $sp, 8
-    		writeLoop:
+    		escribirWhile:
         		lb $a1, 0($t1)
-        		beqz $a1, endWrite
+        		beqz $a1, endEscribirWhile
 
         		addi $sp, $sp, -4
         		sb $a1, 0($sp)
@@ -228,9 +263,9 @@
         		addi $sp, $sp, 4
 
         		addi $t1, $t1, 1
-        		j writeLoop
+        		j escribirWhile
 
-    		endWrite:
+    		endEscribirWhile:
  
         	li $v0, 16
         	move $a0, $t0
@@ -242,6 +277,10 @@
 
 	#--------------------------------------------- ERROR HANDLERS ---------------------------------------------#
 	
+	# Muestra el mensaje de error y termina la ejecución del código
+	# Se genera cuando el documento
+	# de entrada no se puede leer
+	# correctamente
 	errorHandlerDocumento:
 	
 		li $v0, 4
@@ -253,6 +292,11 @@
     		
 	jr $ra
 	
+	
+	# Muestra el mensaje de error y termina la ejecución del código.
+	# Se genera cuando el contenido 
+	# del documento de entrada excede
+	# el número de bytes permitidos
 	errorHandlerCantidadBytes:
 	
 		li $v0, 4
