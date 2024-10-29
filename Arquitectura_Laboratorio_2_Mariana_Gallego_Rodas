@@ -4,11 +4,12 @@
 	outputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
 	mensajeAEncriptar: .space 1024
 
-	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa que desea utilizar: "
+	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa. : "
 	ClaveAditiva: .asciiz "\n Digite la clave aditiva que desea utilizar: "
 
 	MensajeDeErrorDocumento: .asciiz "No se pudo leer el documento"
 	MensajeDeErrorCantidadBytes: .asciiz "La cantidad de Bytes en el documento excede el valor máximo permitido"
+	MensajeDeErrorMayuscula: .asciiz "Hay una mayuscula"
 
 .text
 	main:
@@ -157,6 +158,8 @@
 		
 		add $t2, $zero, $zero # inicializar i = 0
 		
+		#li $t8, 0 #Cuando funcione mirar si se puede borrar
+		
 		encryptWhile:
 			add $t3, $t2, $s0
 			
@@ -166,15 +169,24 @@
 			# Convertir de ASCII a valor en el alfabeto (minúsculas)
     			li $t5, 97                   # ASCII de 'a'
     			sub $t6, $t4, $t5            # 'a' = 0, 'b' = 1, ..., 'z' = 25
+    			
+    			slt $t8, $t6, $zero # $t8 = 1 $t6 < $t5
+    				bne $t8, $zero, elseCondicional
+    					
+    					# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
+    					mul $t6, $t6, $t1            # Multiplicar por a
+    					add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
+    					li $t7, 26                   # Tamaño del alfabeto (mod 26)
+    					rem $t6, $t6, $t7            # Tomar el módulo 26
 
-    			# Aplicar el cifrado afín E(x) = (a * x + b) mod 26
-    			mul $t6, $t6, $t1            # Multiplicar por a
-    			add $t6, $t6, $t0            # Sumar b (usar $t4 como clave aditiva)
-    			li $t7, 26                   # Tamaño del alfabeto (mod 26)
-    			rem $t6, $t6, $t7            # Tomar el módulo 26
+    					# Convertir de vuelta al valor ASCII (minúsculas)
+    					add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
+    					
+    				j endCondicional
+    				elseCondicional:
+    					jal errorHandlerMayuscula
+    				endCondicional:
 
-    			# Convertir de vuelta al valor ASCII (minúsculas)
-    			add $t4, $t6, $t5            # Volver al rango ASCII (sumar 97)
 			
 			li $v0, 11
 			move $a0, $t4
@@ -249,6 +261,17 @@
 	
 		li $v0, 4
     		la $a0, MensajeDeErrorCantidadBytes
+    		syscall
+    		
+    		li $v0, 10
+    		syscall
+    		
+	jr $ra
+	
+	errorHandlerMayuscula:
+	
+		li $v0, 4
+    		la $a0, MensajeDeErrorMayuscula
     		syscall
     		
     		li $v0, 10
