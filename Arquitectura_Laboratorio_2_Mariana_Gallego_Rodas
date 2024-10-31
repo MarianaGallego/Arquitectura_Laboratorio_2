@@ -14,6 +14,8 @@
 .text
 	main:
 	
+		#li $sp, 0
+	
 		#Ingresar mensaje
 		la $a3, inputFile
 		jal leerMensaje
@@ -99,16 +101,18 @@
     		syscall
     		
     		#------------------------- Llamar validador -------------------------#
-    		move $t8, $ra
+    		addi $sp, $sp, -4
+		sw $ra, 0($sp)
     		
     		la $a3, mensajeAEncriptar
     		jal validarCantidadBytes
     		
-    		move $ra, $t8
+    		lw $ra, 0($sp)
+		addi $sp, $sp, 4
 
 		#----------------- Guardar cada byte en la pila -----------------#
 		la $t1, mensajeAEncriptar
-		add $sp, $sp, $t4
+		#add $sp, $sp, $t4
 		li $t2, 0
 
 		guardarWhile:
@@ -224,12 +228,14 @@
 			j encriptarWhile
 		endEncriptarWhile:
 		
-		move $t2, $ra
+		addi $sp, $sp, -4     # Reserva espacio en la pila
+		sw $ra, 0($sp)        # Guarda $ra en la cima de la pila
 		
 		la $a3, criptogramFile
 		jal generarDocumento
 		
-		move $ra, $t2
+		lw $ra, 0($sp)        # Restaura $ra desde la pila
+		addi $sp, $sp, 4      # Libera el espacio reservado en la pila
 	
 	jr $ra
 	
@@ -255,7 +261,7 @@
 
     		bltz $t0, errorHandlerDocumento
 
-    		addi $t1, $sp, 8
+    		addi $t1, $sp, 12
     		escribirWhile:
         		lb $a1, 0($t1)
         		beqz $a1, endEscribirWhile
