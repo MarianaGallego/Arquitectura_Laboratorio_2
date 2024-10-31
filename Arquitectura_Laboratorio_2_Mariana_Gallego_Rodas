@@ -1,7 +1,8 @@
 .data
 
 	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
-	outputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
+	criptogramFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
+	decodedFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/decoded.txt"
 	mensajeAEncriptar: .space 1024
 
 	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa. : "
@@ -14,6 +15,7 @@
 	main:
 	
 		#Ingresar mensaje
+		la $a3, inputFile
 		jal leerMensaje
 	
 		#Ingresar claves
@@ -22,8 +24,10 @@
 		#Encriptar mensaje
 		jal encriptarMensaje
 		
+		jal calculoInversoMultiplicativo
+		
 		#Generar documento
-		jal generarDocumento
+		#jal generarDocumento
 	
 	li $v0, 10
 	syscall
@@ -80,7 +84,7 @@
 
 		#------------------------- Abrir archivo -------------------------#
     		li $v0, 13
-    		la $a0, inputFile
+    		la $a0, ($a3) #inputFile
     		li $a1, 0
     		li $a2, 0
     		syscall
@@ -138,14 +142,14 @@
 	validarCantidadBytes:
 	
 		li $t4, 0
-    		move $t5, $a3
+    		move $t3, $a3
     		
     		contarWhile:
-			lb $t6, 0($t5)
+			lb $t6, 0($t3)
 			beq $t6, 0, endContarWhile
 		
 			addi $t4, $t4, 1
-			addi $t5, $t5, 1
+			addi $t3, $t3, 1
 			j contarWhile
 		endContarWhile:
 		
@@ -221,7 +225,81 @@
 			addi $t2, $t2, 1
 			j encriptarWhile
 		endEncriptarWhile:
+		
+		move $t2, $ra
+		
+		la $a3, criptogramFile
+		jal generarDocumento
+		
+		move $ra, $t2
 	
+	jr $ra
+	
+	desencriptarMensaje:
+	
+		move $t5, $ra
+		
+		la $a3, criptogramFile
+		jal leerMensaje
+		
+		move $ra, $t5
+		
+		
+		move $t0, $ra
+		
+		jal calculoInversoMultiplicativo # $t2
+		
+		move $ra, $t0
+	jr $ra
+	
+	calculoInversoMultiplicativo:
+		
+		#lb $t0, 4($sp) # Multiplicativa
+		li $t2, 9
+		
+		
+		
+    		 # Calcular inverso usando el Algoritmo Extendido de Euclides
+    		li $t1, 26                # módulo 26
+    		li $t4, 0                 # x = 0
+    		li $t5, 1                 # y = 1
+    		li $t6, 1 
+
+    		# Bucle del Algoritmo Extendido de Euclides
+		extended_euclid:
+    			beq $t2, 0, found_inverse  # si a = 0, se ha encontrado el inverso
+
+    			# q = m / a
+    			div $t1, $t2               # dividir m entre a
+    			mflo $t7                   # obtener el cociente (q)
+    			mfhi $t8                  # obtener el residuo (r)
+
+    			# Actualizar m y a
+    			move $t1, $t2              # m = a
+    			move $t2, $t8              # a = r
+
+    			# Actualizar x e y
+    			move $t9, $t4              # t8 = x
+    			move $t4, $t5              # x = y
+    			mul $t5, $t7, $t9          # q * t8
+    			sub $t5, $t5, $t9          # y = x - (q * t8)
+
+    		j extended_euclid          # repetir el bucle
+
+		found_inverse:
+    			# Asegurarse de que y es positivo
+    			blt $t5, $zero, add_mod     # si y < 0, agregar m
+    			j print_result               # si no, saltar a imprimir
+
+		add_mod:
+    			add $t5, $t5, $t1           # y = y + m
+
+			print_result:
+    			# Imprimir el inverso
+    			li $v0, 1                  # syscall para imprimir entero
+    			move $a0, $t5              # cargar el resultado
+   			syscall                    # llamada al sistema              # llamada al sistema
+		
 	jr $ra
 	
 	
@@ -238,7 +316,7 @@
 	generarDocumento:
 	
     		li $v0, 13
-    		la $a0, outputFile
+    		la $a0, ($a3) #outputFile
     		li $a1, 1
     		li $a2, 0 
     		syscall
