@@ -14,25 +14,21 @@
 .text
 	main:
 	
+		# Definición del valor del módulo
 		li $s2, 26
 	
-		#Ingresar mensaje
+		# Llamada a ingresar mensaje
 		la $a3, inputFile
 		jal leerMensaje
 	
-		#Ingresar claves
+		# Llamada a ingresar claves
 		jal leerClaves
 		
-		#Encriptar mensaje
+		# Llamada a encriptar mensaje
 		jal encriptarMensaje
 		
+		# Llamada a desencriptar mensaje
 		jal desencriptarMensaje
-		
-		#lb $s1, 4($sp) 
-		#jal calcularInversoMultiplicativoModular
-		
-		#Generar documento
-		#jal generarDocumento
 	
 	li $v0, 10
 	syscall
@@ -55,7 +51,7 @@
 	# y los valores que controlan el recorrido del mensaje.
 	leerMensaje:
 
-		#------------------------- Abrir archivo -------------------------#
+		#--------------------------- Abrir archivo --------------------------#
     		li $v0, 13
     		la $a0, ($a3)
     		li $a1, 0
@@ -66,7 +62,7 @@
     		
     		bltz $t0, errorHandlerDocumento
     		
-    		#------------------------- Leer archivo -------------------------#
+    		#--------------------------- Leer archivo ---------------------------#
     		li $v0, 14
     		move $a0, $t0
     		la $a1, mensajeAEncriptar
@@ -83,7 +79,7 @@
     		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 
-		#----------------- Guardar cada byte en la pila -----------------#
+		#------------------- Guardar cada byte en la pila -------------------#
 		la $t1, mensajeAEncriptar
 		#add $sp, $sp, $t4
 		li $t2, 0
@@ -113,7 +109,7 @@
 	# y utilizando el Store Byte (sb)
 	leerClaves:
 
-		#---------------------- Clave multiplicativa ----------------------#
+		#--------------------- Clave multiplicativa ---------------------#
 		li $v0, 4
 		la $a0, ClaveMultiplicativa
 		syscall
@@ -167,7 +163,7 @@
     			li $t5, 97
     			sub $t6, $t4, $t5
     		
-    			#----------------- Validar mayúsculas y minúsculas -----------------#		
+    			#------------ Validar mayúsculas y minúsculas ------------#		
     			slt $t8, $t6, $zero
     			bne $t8, $zero, elseCondicional	
 
@@ -220,7 +216,7 @@
 		addi $sp, $sp, -4     # Reserva espacio en la pila
 		sw $ra, 0($sp)        # Guarda $ra en la cima de la pila
 		
-		lb $s1, 8($sp) # en ocho porque al principio de la fila no solo están guardadas las claves si no tambien la memoria
+		lb $a1, 8($sp) # en ocho porque al principio de la fila no solo están guardadas las claves si no tambien la memoria
 		jal calcularInversoMultiplicativoModular
 		
 		lw $ra, 0($sp)        # Restaura $ra desde la pila
@@ -232,7 +228,7 @@
 		
 		lb $t0, 0($sp)
 		lb $t1, 4($sp)
-		move $t9, $t4
+		move $t9, $v1
 		
 		add $t2, $zero, $zero
 		
@@ -251,7 +247,7 @@
 
 				sub $t6, $t6, $t0
 				bgez $t6, otroCon
-    					addi $t6, $t6, 26
+    					add $t6, $t6, $s2
     				otroCon:
     				mul $t6, $t6, $t9
     				move $t7, $s2
@@ -270,7 +266,7 @@
     					
     				sub $t6, $t6, $t0
     				bgez $t6, otroCondi
-    					addi $t6, $t6, 26
+    					add $t6, $t6, $s2
     				otroCondi:
     				mul $t6, $t6, $t9
     				move $t7, $s2
@@ -343,8 +339,7 @@
 	
 		move $s0, $s2
 
-		# Inicialización de variables
-    		move $t2, $s1       # t2 = a (valor del número para el cual queremos el inverso modular)
+    		move $t2, $a1       # t2 = a (valor del número para el cual queremos el inverso modular)
     		move $t3, $s0      # t3 = m (módulo)
     		li $t4, 1       # x0 = 1
     		li $t5, 0       # y0 = 0
@@ -393,11 +388,13 @@
     		# Asegurar que el resultado esté en el rango positivo
     		bgez $t4, display_result   # Si x >= 0, no hay necesidad de ajustar
     		add $t4, $t4, $s0   #aqui se le debe sumar el modulo  a $t4     # Si x < 0, x += m
+    		
+    		move $v1, $t4
 
 		display_result:
     		# Mostrar el inverso modular en $t4
     		li $v0, 1
-    		move $a0, $t4
+    		move $a0, $v1
     		syscall
     		jr $ra                       # Regresar al llamador
 
