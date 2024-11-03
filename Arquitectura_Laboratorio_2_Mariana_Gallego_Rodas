@@ -247,12 +247,16 @@
     		
     			#----------------- Validar mayúsculas y minúsculas -----------------#		
     			slt $t8, $t6, $zero
-    			bne $t8, $zero, elseCondicionaldes	
+    			bne $t8, $zero, elseCondicionaldes
 
 				sub $t6, $t6, $t0
+				bgez $t6, otroCon
+    					addi $t6, $t6, 26
+    				otroCon:
     				mul $t6, $t6, $t9
     				move $t7, $s2
-    				rem $t6, $t6, $t7
+    				div $t6, $t7
+    				mfhi $t6
 
     				add $t4, $t6, $t5
     				
@@ -261,12 +265,17 @@
     			j endCondicionaldes
     			elseCondicionaldes:
     					
-    				sub $t6, $t4, 65
+    				li $s3, 65
+    				sub $t6, $t4, $s3 # esta linea
     					
     				sub $t6, $t6, $t0
+    				bgez $t6, otroCondi
+    					addi $t6, $t6, 26
+    				otroCondi:
     				mul $t6, $t6, $t9
     				move $t7, $s2
-    				rem $t6, $t6, $t7
+    				div $t6, $t7
+    				mfhi $t6
 
     				addi $t4, $t6, 65
     				
