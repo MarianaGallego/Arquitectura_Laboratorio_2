@@ -14,7 +14,7 @@
 .text
 	main:
 	
-		#li $sp, 0
+		li $s2, 26
 	
 		#Ingresar mensaje
 		la $a3, inputFile
@@ -25,6 +25,11 @@
 		
 		#Encriptar mensaje
 		jal encriptarMensaje
+		
+		jal desencriptarMensaje
+		
+		#lb $s1, 4($sp) 
+		#jal calcularInversoMultiplicativoModular
 		
 		#Generar documento
 		#jal generarDocumento
@@ -39,39 +44,7 @@
 
 	#---------------------------------------- DECLARACIÓN DE FUNCIONES ----------------------------------------#
 
-
-	# Muestra mensaje al usuario,
-	# lee los valores de cada clave
-	# y los almacena en la pila con
-	# ayuda del Stack Pointer ($sp)
-	# y utilizando el Store Byte (sb)
-	leerClaves:
-
-		#---------------------- Clave multiplicativa ----------------------#
-		li $v0, 4
-		la $a0, ClaveMultiplicativa
-		syscall
-		
-		li $v0, 5
-		syscall
-		
-		addi $sp, $sp, -4
-		sb $v0, 0($sp)
-
-		#------------------------- Clave aditiva -------------------------#
-		li $v0, 4
-		la $a0, ClaveAditiva
-		syscall
-		
-		li $v0, 5
-		syscall
-		
-		addi $sp, $sp, -4
-		sb $v0, 0($sp)
-		
-	jr $ra
 	
-
 	# Abre el archivo que contiene el mensaje
 	# a encriptar, y almacena los caracteres en
 	# la pila con ayuda del Stack Pointer ($sp).
@@ -131,38 +104,39 @@
 		sub $sp, $sp, $t2
 		
 	jr $ra
-	
-	
-	# Verifica que el contenido del documento
-	# de entrada no supere los 1024 bytes.
-	# Los registros $t4 a $t9 almacenan
-	# los bytes que se leen, la variable
-	# que controla el ciclo que recorre
-	# los caracteres del mensaje y los
-	# valores que retornan las operaciones
-	# condicionales
-	validarCantidadBytes:
-	
-		li $t4, 0
-    		move $t5, $a3
-    		
-    		contarWhile:
-			lb $t6, 0($t5)
-			beq $t6, 0, endContarWhile
+
+
+	# Muestra mensaje al usuario,
+	# lee los valores de cada clave
+	# y los almacena en la pila con
+	# ayuda del Stack Pointer ($sp)
+	# y utilizando el Store Byte (sb)
+	leerClaves:
+
+		#---------------------- Clave multiplicativa ----------------------#
+		li $v0, 4
+		la $a0, ClaveMultiplicativa
+		syscall
 		
-			addi $t4, $t4, 1
-			addi $t5, $t5, 1
-			j contarWhile
-		endContarWhile:
+		li $v0, 5
+		syscall
 		
-		li $t7, 1025
-		slt $t9, $t7, $t4
-			bne $t9, $zero, else
-				jr $ra	
-			else:
-				j errorHandlerCantidadBytes
-				
+		addi $sp, $sp, -4
+		sb $v0, 0($sp)
+
+		#------------------------- Clave aditiva -------------------------#
+		li $v0, 4
+		la $a0, ClaveAditiva
+		syscall
+		
+		li $v0, 5
+		syscall
+		
+		addi $sp, $sp, -4
+		sb $v0, 0($sp)
+		
 	jr $ra
+	
 	
 	
 	# Encripta el mensaje que se obtuvo
@@ -199,7 +173,7 @@
 
     				mul $t6, $t6, $t1
     				add $t6, $t6, $t0
-    				li $t7, 26
+    				move $t7, $s2
     				rem $t6, $t6, $t7
 
     				add $t4, $t6, $t5
@@ -211,7 +185,7 @@
     					
     				mul $t6, $t6, $t1
     				add $t6, $t6, $t0
-    				li $t7, 26
+    				move $t7, $s2
     				rem $t6, $t6, $t7
 
     				addi $t4, $t6, 65
@@ -238,6 +212,194 @@
 		addi $sp, $sp, 4      # Libera el espacio reservado en la pila
 	
 	jr $ra
+	
+	
+	
+	desencriptarMensaje:
+	
+		addi $sp, $sp, -4     # Reserva espacio en la pila
+		sw $ra, 0($sp)        # Guarda $ra en la cima de la pila
+		
+		lb $s1, 8($sp) # en ocho porque al principio de la fila no solo están guardadas las claves si no tambien la memoria
+		jal calcularInversoMultiplicativoModular
+		
+		lw $ra, 0($sp)        # Restaura $ra desde la pila
+		addi $sp, $sp, 4      # Libera el espacio reservado en la pila
+		
+		#---------------------------------- El inverso queda en $t4
+		
+		addi $s0, $sp, 8
+		
+		lb $t0, 0($sp)
+		lb $t1, 4($sp)
+		move $t9, $t4
+		
+		add $t2, $zero, $zero
+		
+		desencriptarWhile:
+			add $t3, $t2, $s0
+			
+			lb $t4, 0($t3)
+			beq $t4, $zero, endDesencriptarWhile
+			
+    			li $t5, 97
+    			sub $t6, $t4, $t5
+    		
+    			#----------------- Validar mayúsculas y minúsculas -----------------#		
+    			slt $t8, $t6, $zero
+    			bne $t8, $zero, elseCondicionaldes	
+
+				sub $t6, $t6, $t0
+    				mul $t6, $t6, $t9
+    				move $t7, $s2
+    				rem $t6, $t6, $t7
+
+    				add $t4, $t6, $t5
+    				
+    				
+    					
+    			j endCondicionaldes
+    			elseCondicionaldes:
+    					
+    				sub $t6, $t4, 65
+    					
+    				sub $t6, $t6, $t0
+    				mul $t6, $t6, $t9
+    				move $t7, $s2
+    				rem $t6, $t6, $t7
+
+    				addi $t4, $t6, 65
+    				
+    				
+    					
+    			endCondicionaldes:
+			
+			li $v0, 11
+			move $a0, $t4
+			syscall
+			
+			sb $a0, 0($t3)
+			
+			addi $t2, $t2, 1
+			j desencriptarWhile
+		endDesencriptarWhile:
+		
+		addi $sp, $sp, -4     # Reserva espacio en la pila
+		sw $ra, 0($sp)        # Guarda $ra en la cima de la pila
+		
+		la $a3, decodedFile
+		jal generarDocumento
+		
+		lw $ra, 0($sp)        # Restaura $ra desde la pila
+		addi $sp, $sp, 4      # Libera el espacio reservado en la pila
+	
+	jr $ra
+	
+	
+	
+	# Verifica que el contenido del documento
+	# de entrada no supere los 1024 bytes.
+	# Los registros $t4 a $t9 almacenan
+	# los bytes que se leen, la variable
+	# que controla el ciclo que recorre
+	# los caracteres del mensaje y los
+	# valores que retornan las operaciones
+	# condicionales
+	validarCantidadBytes:
+	
+		li $t4, 0
+    		move $t5, $a3
+    		
+    		contarWhile:
+			lb $t6, 0($t5)
+			beq $t6, 0, endContarWhile
+		
+			addi $t4, $t4, 1
+			addi $t5, $t5, 1
+			j contarWhile
+		endContarWhile:
+		
+		li $t7, 1025
+		slt $t9, $t7, $t4
+			bne $t9, $zero, else
+				jr $ra	
+			else:
+				j errorHandlerCantidadBytes
+				
+	jr $ra
+	
+	
+	
+	calcularInversoMultiplicativoModular:
+	
+		move $s0, $s2
+
+		# Inicialización de variables
+    		move $t2, $s1       # t2 = a (valor del número para el cual queremos el inverso modular)
+    		move $t3, $s0      # t3 = m (módulo)
+    		li $t4, 1       # x0 = 1
+    		li $t5, 0       # y0 = 0
+    		li $t6, 0       # x1 = 0
+    		li $t7, 1       # y1 = 1
+
+		mod_inverse_loop:
+    			# Si t2 == 0, significa que no hay inverso, salir del bucle
+    			beq $t2, $zero, no_inverse
+
+    			# Si t2 == 1, hemos encontrado el inverso modular en t4
+    			beq $t2, 1, end_mod_inverse
+
+    			# Calcular el cociente q = t2 / t3
+    			div $t2, $t3
+    			mflo $t8           # t8 = q
+
+    			# Calcular el residuo r = t2 - q * t3
+    			mul $t9, $t8, $t3   # t9 = q * t3
+    			sub $t2, $t2, $t9   # t2 = r (nuevo valor de t2)
+
+    			# Calcular los nuevos valores de x y y
+    			mul $t9, $t8, $t6   # t9 = q * x1
+    			sub $t4, $t4, $t9   # x0 = x0 - q * x1
+    			mul $t9, $t8, $t7   # t9 = q * y1
+    			sub $t5, $t5, $t9   # y0 = y0 - q * y1
+
+    			# Intercambiar valores para la siguiente iteración
+   			move $t9, $t3       # Guardar el valor actual de t3
+    			move $t3, $t2       # t3 = r (nuevo valor de m)
+    			move $t2, $t9       # t2 = m (anterior)
+
+    			move $t9, $t6       # Guardar el valor actual de x1
+    			move $t6, $t4       # x1 = x0
+    			move $t4, $t9       # x0 = x1 (anterior)
+
+    			move $t9, $t7       # Guardar el valor actual de y1
+    			move $t7, $t5       # y1 = y0
+    			move $t5, $t9       # y0 = y1 (anterior)
+
+    			# Volver al bucle para la siguiente iteración
+    			j mod_inverse_loop
+
+		end_mod_inverse:
+	
+    		# Asegurar que el resultado esté en el rango positivo
+    		bgez $t4, display_result   # Si x >= 0, no hay necesidad de ajustar
+    		add $t4, $t4, $s0   #aqui se le debe sumar el modulo  a $t4     # Si x < 0, x += m
+
+		display_result:
+    		# Mostrar el inverso modular en $t4
+    		li $v0, 1
+    		move $a0, $t4
+    		syscall
+    		jr $ra                       # Regresar al llamador
+
+		no_inverse:
+    		# No hay inverso, mostrar 0
+    		li $v0, 1
+    		move $a0, $zero
+    		syscall
+	
+	jr $ra
+	
 	
 	
 	# Recorre la pila con el mensaje
