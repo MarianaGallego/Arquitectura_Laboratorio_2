@@ -27,6 +27,9 @@
 		# Llamada a encriptar mensaje
 		jal encriptarMensaje
 		
+		la $a3, criptogramFile
+		jal leerMensaje
+		
 		# Llamada a desencriptar mensaje
 		jal desencriptarMensaje
 	
@@ -116,10 +119,8 @@
 		
 		li $v0, 5
 		syscall
+		move $s4, $v0
 		
-		addi $sp, $sp, -4
-		sb $v0, 0($sp)
-
 		#------------------------- Clave aditiva -------------------------#
 		li $v0, 4
 		la $a0, ClaveAditiva
@@ -127,9 +128,7 @@
 		
 		li $v0, 5
 		syscall
-		
-		addi $sp, $sp, -4
-		sb $v0, 0($sp)
+		move $s5, $v0
 		
 	jr $ra
 	
@@ -147,15 +146,13 @@
 	# que se realizan para aplicar el método Afin
 	encriptarMensaje:
 	
-		addi $s0, $sp, 8
-	
-		lb $t0, 0($sp)
-		lb $t1, 4($sp)
+		#addi $s0, $sp, 8
 		
 		add $t2, $zero, $zero
 		
 		encriptarWhile:
-			add $t3, $t2, $s0
+			#add $t3, $t2, $s0
+			add $t3, $sp, $t2
 			
 			lb $t4, 0($t3)
 			beq $t4, $zero, endEncriptarWhile
@@ -167,8 +164,8 @@
     			slt $t8, $t6, $zero
     			bne $t8, $zero, elseCondicionalEncriptar	
 
-    				mul $t6, $t6, $t1
-    				add $t6, $t6, $t0
+    				mul $t6, $t6, $s4
+    				add $t6, $t6, $s5
     				move $t7, $s2
     				rem $t6, $t6, $t7
 
@@ -179,8 +176,8 @@
     					
     				sub $t6, $t4, 65
     					
-    				mul $t6, $t6, $t1
-    				add $t6, $t6, $t0
+    				mul $t6, $t6, $s4
+    				add $t6, $t6, $s5
     				move $t7, $s2
     				rem $t6, $t6, $t7
 
@@ -216,16 +213,13 @@
 		addi $sp, $sp, -4
 		sw $ra, 0($sp)
 		
-		lb $a1, 8($sp)
 		jal calcularInversoMultiplicativoModular
 		
 		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 		
-		addi $s0, $sp, 8
+		addi $s0, $sp, 0
 		
-		lb $t0, 0($sp)
-		lb $t1, 4($sp)
 		move $t9, $v1
 		
 		add $t2, $zero, $zero
@@ -243,7 +237,7 @@
     			slt $t8, $t6, $zero
     			bne $t8, $zero, elseCondicionalDesencriptar
 
-				sub $t6, $t6, $t0
+				sub $t6, $t6, $s5
 				bgez $t6, condicionalDesencriptarMinuscula
     					add $t6, $t6, $s2
     				condicionalDesencriptarMinuscula:
@@ -262,7 +256,7 @@
     				li $s3, 65
     				sub $t6, $t4, $s3
     					
-    				sub $t6, $t6, $t0
+    				sub $t6, $t6, $s5
     				bgez $t6, condicionalDesencriptarMayuscula
     					add $t6, $t6, $s2
     				condicionalDesencriptarMayuscula:
@@ -337,7 +331,6 @@
 	
 		move $s0, $s2
 
-    		move $t2, $a1
     		move $t3, $s0
     		li $t4, 1
     		li $t5, 0
@@ -346,13 +339,13 @@
 
 		calcularWhile:
 
-    			beq $t2, 1, endCalcularWhile
+    			beq $s4, 1, endCalcularWhile
 
-    			div $t2, $t3
+    			div $s4, $t3
     			mflo $t8
 
     			mul $t9, $t8, $t3
-    			sub $t2, $t2, $t9
+    			sub $s4, $s4, $t9
 
     			mul $t9, $t8, $t6
     			sub $t4, $t4, $t9
@@ -360,8 +353,8 @@
     			sub $t5, $t5, $t9
 
    			move $t9, $t3
-    			move $t3, $t2
-    			move $t2, $t9
+    			move $t3, $s4
+    			move $s4, $t9
 
     			move $t9, $t6
     			move $t6, $t4
@@ -412,7 +405,8 @@
 
     		bltz $t0, errorHandlerDocumento
 
-    		addi $t1, $sp, 12
+    		addi $t1, $sp, 4
+    		addi $t1, $sp, 0
     		escribirWhile:
         		lb $a1, 0($t1)
         		beqz $a1, endEscribirWhile
