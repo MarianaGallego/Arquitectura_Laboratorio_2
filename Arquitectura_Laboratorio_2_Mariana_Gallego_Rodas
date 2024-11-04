@@ -244,9 +244,9 @@
     			bne $t8, $zero, elseCondicionalDesencriptar
 
 				sub $t6, $t6, $t0
-				bgez $t6, otroCon
+				bgez $t6, condicionalDesencriptarMinuscula
     					add $t6, $t6, $s2
-    				otroCon:
+    				condicionalDesencriptarMinuscula:
     				mul $t6, $t6, $t9
     				move $t7, $s2
     				div $t6, $t7
@@ -263,9 +263,9 @@
     				sub $t6, $t4, $s3
     					
     				sub $t6, $t6, $t0
-    				bgez $t6, otroCondi
+    				bgez $t6, condicionalDesencriptarMayuscula
     					add $t6, $t6, $s2
-    				otroCondi:
+    				condicionalDesencriptarMayuscula:
     				mul $t6, $t6, $t9
     				move $t7, $s2
     				div $t6, $t7
@@ -344,11 +344,9 @@
     		li $t6, 0
     		li $t7, 1
 
-		mod_inverse_loop:
+		calcularWhile:
 
-    			beq $t2, $zero, no_inverse
-
-    			beq $t2, 1, end_mod_inverse
+    			beq $t2, 1, endCalcularWhile
 
     			div $t2, $t3
     			mflo $t8
@@ -373,26 +371,21 @@
     			move $t7, $t5
     			move $t5, $t9
 
-    			j mod_inverse_loop
+    			j calcularWhile
 
-		end_mod_inverse:
+		endCalcularWhile:
 	
-    		bgez $t4, display_result
+    		bgez $t4, mostrarInverso
     		add $t4, $t4, $s0
     		
     		move $v1, $t4
 
-		display_result:
+		mostrarInverso:
     			li $v0, 1
     			move $a0, $v1
     			syscall
     		
     			jr $ra
-
-		no_inverse:
-    			li $v0, 1
-    			move $a0, $zero
-    			syscall
 	
 	jr $ra
 	
