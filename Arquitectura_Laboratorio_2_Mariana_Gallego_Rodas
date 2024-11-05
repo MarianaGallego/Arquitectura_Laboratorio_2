@@ -45,10 +45,13 @@
 	#---------------------------------------- DECLARACIÓN DE FUNCIONES ----------------------------------------#
 
 	
-	# Abre el archivo que contiene el mensaje
-	# a encriptar o desencriptar, y almacena
-	# los caracteres en la pila con ayuda del
-	# Stack Pointer ($sp).
+	# Abre el archivo que contiene el mensaje a
+	# encriptar o desencriptar utilizando el
+	# Syscall 13, almacena la cadena de caracteres
+	# en una posición temporal de memoria y
+	# lo cierra utilizando el Syscall 16;
+	# almacena los caracteres en la pila con ayuda
+	# del Stack Pointer ($sp).
 	# Los registros $t0 a $t3 almacenan el
 	# resultado con el que se evalúa si se pudo 
 	# abrir el archivo, la dirección temporal
@@ -75,6 +78,11 @@
     		la $a1, mensaje
     		li $a2, 1024
     		syscall
+    		
+    		#-------------------------- Cerrar archivo --------------------------#
+    		li $v0, 16
+        	move $a0, $t0
+        	syscall
     		
     		#------------------------- Llamar validador -------------------------#
     		addi $sp, $sp, -4
@@ -142,9 +150,10 @@
 	# claves ingresadas por el usuario.
 	# Los registros $t1 a $t8 almacenan
 	# el valor ASCCI desde donde comienzan
-	# las letras mayúsculas, el contador que
-	# ayúdará a controlar el ciclo de recorrido
-	# de la pila, la posición en pila donde
+	# las letras mayúsculas, el contador
+	# que ayúdará a darle valor a $t3 que será la
+	# dirección de pila en la que se está en la
+	# iteración en curso, la posición en pila donde
 	# está el byte que se va a encriptar, el
 	# byte que se va a encriptar, el valor ASCCI
 	# desde donde comienzan las letras minúsculas,
@@ -219,10 +228,11 @@
 	# multiplicativa, para esto se llama la
 	# función calcularInversoMultiplicativoModular.
 	# Los registros $t2 a $t9 almacenan el contador
-	# que ayúdará a controlar el ciclo de recorrido
-	# de la pila, la posición en pila donde está el
-	# byte que se va a desencriptar, el byte que se
-	# va a encriptar, el valor ASCCI desde donde
+	# que ayúdará a darle valor a $t3 que será la
+	# dirección de pila en la que se está en la
+	# iteración en curso, la posición en pila donde 
+	# está el byte que se va a desencriptar, el byte 
+	# que se va a encriptar, el valor ASCCI desde donde
 	# comienzan las letras minúsculas, el resultado
 	# de las operaciones que se deben hacer para
 	# aplicar el método Afin, el valor del módulo
@@ -315,8 +325,8 @@
 	# Verifica que el contenido del documento
 	# de entrada no supere los 1024 bytes.
 	# Los registros $t4 a $t9 (exceptuando $t8)
-	# almacenan el contador que ayuda a controlar
-	# el recorrido de la cadena de caracteres,
+	# almacenan el contador que guarda la
+	# cantidad de bytes que se leen,
 	# la dirección temporal de memoria donde se
 	# encuentra la cadena de caracteres que se
 	# leyó, los bytes que se leen, el número
@@ -413,16 +423,22 @@
 	
 	
 	
-	# Recorre la pila con el mensaje
-	# encriptado y escribe cada byte
-	# leído en el documento de salida.
-	# Los registros $t0 a $t1 almacenan
-	# El resultado de si se pudo abrir
-	# el archivo y la posición de memoria
-	# a partir de la que se encuentra el
-	# mensaje encriptado.
-	# El registro $a1 almacena los bytes
-	# que se van cargando
+	# Recorre la pila  y escribe cada
+	# byte leído en el documento que
+	# se le pasó como parémetro en $a3.
+	# Utiliza el Syscall 13 para abrir
+	# el archivo en que va a escribir.
+	# Los registros $t0 y $t1 almacenan
+	# el resultado que indica si el archivo
+	# se pudo abrir y la posición en la que
+	# se encuentra el Stack pointer ($sp).
+	# El registro $a1 almacena el byte que
+	# esta en la posición de pila que indica
+	# %t1. También utiliza el Syscall 15 para
+	# escribir en el documento que se le
+	# indica a través del descriptor de
+	# archivo y el Syscall 16 para cerrar
+	# el documento.
 	generarDocumento:
 	
     		li $v0, 13
@@ -466,7 +482,7 @@
 	#--------------------------------------------- ERROR HANDLERS ---------------------------------------------#
 	
 	# Muestra el mensaje de error y termina la ejecución del código
-	# Se genera cuando el documento
+	# Se invoca cuando el documento
 	# de entrada no se puede leer
 	# correctamente
 	errorHandlerDocumento:
@@ -482,7 +498,7 @@
 	
 	
 	# Muestra el mensaje de error y termina la ejecución del código.
-	# Se genera cuando el contenido 
+	# Se invoca cuando el contenido 
 	# del documento de entrada excede
 	# el número de bytes permitidos
 	errorHandlerCantidadBytes:
