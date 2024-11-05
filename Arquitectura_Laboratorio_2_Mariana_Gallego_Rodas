@@ -168,7 +168,9 @@
 		move $t7, $s2
 		li $t1, 65
 		li $t5, 97
-		add $t2, $zero, $zero
+		li $t2, 0
+		li $t3, 0
+		li $t6, 0
 		
 		encriptarWhile:
 			add $t3, $sp, $t2
@@ -184,7 +186,8 @@
 
     				mul $t6, $t6, $s4
     				add $t6, $t6, $s5
-    				rem $t6, $t6, $t7
+    				div $t6, $t7
+    				mfhi $t6
 
     				add $t4, $t6, $t5
     					
@@ -195,7 +198,8 @@
     					
     				mul $t6, $t6, $s4
     				add $t6, $t6, $s5
-    				rem $t6, $t6, $t7
+    				div $t6, $t7
+    				mfhi $t6
 
     				add $t4, $t6, $t1
     					
@@ -376,6 +380,8 @@
 	calcularInversoMultiplicativoModular:
 	
     		move $t3, $s2
+		move $t2, $s4
+		
     		li $t9, 0
     		
     		li $t4, 1
@@ -385,13 +391,13 @@
 
 		calcularWhile:
 
-    			beq $s4, 1, endCalcularWhile
+    			beq $t2, 1, endCalcularWhile
 
-    			div $s4, $t3
+    			div $t2, $t3
     			mflo $t8
 
     			mul $t9, $t8, $t3
-    			sub $s4, $s4, $t9
+    			sub $t2, $t2, $t9
 
     			mul $t9, $t8, $t6
     			sub $t4, $t4, $t9
@@ -399,8 +405,8 @@
     			sub $t5, $t5, $t9
 
    			move $t9, $t3
-    			move $t3, $s4
-    			move $s4, $t9
+    			move $t3, $t2
+    			move $t2, $t9
 
     			move $t9, $t6
     			move $t6, $t4
@@ -413,8 +419,8 @@
     			j calcularWhile
 
 		endCalcularWhile:
-	
-    		bgez $t4, fin
+			
+		bgez $t4, fin
     		add $t4, $t4, $s2
 
 		fin:
@@ -481,7 +487,8 @@
 
 	#--------------------------------------------- ERROR HANDLERS ---------------------------------------------#
 	
-	# Muestra el mensaje de error y termina la ejecución del código
+	# Muestra el mensaje de error y
+	# termina la ejecución del código
 	# Se invoca cuando el documento
 	# de entrada no se puede leer
 	# correctamente
@@ -497,7 +504,8 @@
 	jr $ra
 	
 	
-	# Muestra el mensaje de error y termina la ejecución del código.
+	# Muestra el mensaje de error y
+	# termina la ejecución del código.
 	# Se invoca cuando el contenido 
 	# del documento de entrada excede
 	# el número de bytes permitidos
