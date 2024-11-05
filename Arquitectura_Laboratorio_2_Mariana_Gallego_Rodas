@@ -3,7 +3,7 @@
 	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
 	criptogramFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
 	decodedFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/decoded.txt"
-	mensajeEncriptar: .space 1024
+	mensaje: .space 1024
 
 	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa. Recuerde que debe ser un número COPRIMO con 26: "
 	ClaveAditiva: .asciiz "\nDigite la clave aditiva. Recuerde que debe ser un número entre 0 y 25: "
@@ -17,7 +17,7 @@
 		# Definición del valor del módulo
 		li $s2, 26
 	
-		# Llamada a ingresar mensaje de inputFile
+		# Llamada a leer mensaje de inputFile
 		la $a3, inputFile
 		jal leerMensaje
 	
@@ -27,7 +27,7 @@
 		# Llamada a encriptar mensaje
 		jal encriptarMensaje
 		
-		# Llamada a ingresar mensaje de outputFile
+		# Llamada a leer mensaje de outputFile
 		la $a3, criptogramFile
 		jal leerMensaje
 		
@@ -46,13 +46,16 @@
 
 	
 	# Abre el archivo que contiene el mensaje
-	# a encriptar, y almacena los caracteres en
-	# la pila con ayuda del Stack Pointer ($sp).
-	# Los registros $t0 a $t3 almacenan el resultado
-	# de si se pudo abrir el archivo, el valor de
-	# $ra para cuando se va a llamar una función,
-	# el mensaje que se leyó, los bytes que se leen
-	# y los valores que controlan el recorrido del mensaje.
+	# a encriptar o desencriptar, y almacena
+	# los caracteres en la pila con ayuda del
+	# Stack Pointer ($sp).
+	# Los registros $t0 a $t3 almacenan el
+	# resultado con el que se evalúa si se pudo 
+	# abrir el archivo, la dirección temporal
+	# de memoria donde se encuentra la cadena
+	# de caracteres que se leyó, el valor que
+	# controla el recorrido del mensaje, y los
+	# bytes que se leen y se almacenan
 	leerMensaje:
 
 		#--------------------------- Abrir archivo --------------------------#
@@ -69,7 +72,7 @@
     		#--------------------------- Leer archivo ---------------------------#
     		li $v0, 14
     		move $a0, $t0
-    		la $a1, mensajeEncriptar
+    		la $a1, mensaje
     		li $a2, 1024
     		syscall
     		
@@ -77,15 +80,14 @@
     		addi $sp, $sp, -4
 		sw $ra, 0($sp)
     		
-    		la $a3, mensajeEncriptar
+    		la $a3, mensaje
     		jal validarCantidadBytes
     		
     		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 
 		#------------------- Guardar cada byte en la pila -------------------#
-		la $t1, mensajeEncriptar
-		#add $sp, $sp, $t4
+		la $t1, mensaje
 		li $t2, 0
 
 		guardarWhile:
@@ -108,9 +110,8 @@
 
 	# Muestra mensaje al usuario,
 	# lee los valores de cada clave
-	# y los almacena en la pila con
-	# ayuda del Stack Pointer ($sp)
-	# y utilizando el Store Byte (sb)
+	# y los almacena en $s4 y $s5
+	# respectivamente
 	leerClaves:
 
 		#--------------------- Clave multiplicativa ---------------------#
@@ -136,29 +137,36 @@
 	
 	
 	# Encripta el mensaje que se obtuvo
-	# del documento de entrada aplicando
+	# del documento inputFile aplicando
 	# el método Afín y utilizando las
 	# claves ingresadas por el usuario.
-	# Los registros $t0 a $t8 almacenan
-	# los bytes que se leen, la variable
-	# que controla el ciclo que recorre
-	# los caracteres del mensaje y
-	# los resultados de las operaciones
-	# que se realizan para aplicar el método Afin
+	# Los registros $t1 a $t8 almacenan
+	# el valor ASCCI desde donde comienzan
+	# las letras mayúsculas, el contador que
+	# ayúdará a controlar el ciclo de recorrido
+	# de la pila, la posición en pila donde
+	# está el byte que se va a encriptar, el
+	# byte que se va a encriptar, el valor ASCCI
+	# desde donde comienzan las letras minúsculas,
+	# el resultado de las operaciones que se
+	# deben hacer para aplicar el método Afin,
+	# el valor del módulo que se va a usar y el
+	# valor que usa el condicional para saber
+	# si la letra que se va a encriptar es
+	# mayúscula o minúscula.
 	encriptarMensaje:
 	
-		#addi $s0, $sp, 8
-		
+		move $t7, $s2
+		li $t1, 65
+		li $t5, 97
 		add $t2, $zero, $zero
 		
 		encriptarWhile:
-			#add $t3, $t2, $s0
 			add $t3, $sp, $t2
 			
 			lb $t4, 0($t3)
 			beq $t4, $zero, endEncriptarWhile
 			
-    			li $t5, 97
     			sub $t6, $t4, $t5
     		
     			#------------ Validar mayúsculas y minúsculas ------------#		
@@ -167,7 +175,6 @@
 
     				mul $t6, $t6, $s4
     				add $t6, $t6, $s5
-    				move $t7, $s2
     				rem $t6, $t6, $t7
 
     				add $t4, $t6, $t5
@@ -175,22 +182,17 @@
     			j endCondicionalEncriptar
     			elseCondicionalEncriptar:
     					
-    				sub $t6, $t4, 65
+    				sub $t6, $t4, $t1
     					
     				mul $t6, $t6, $s4
     				add $t6, $t6, $s5
-    				move $t7, $s2
     				rem $t6, $t6, $t7
 
-    				addi $t4, $t6, 65
+    				add $t4, $t6, $t1
     					
     			endCondicionalEncriptar:
 			
-			li $v0, 11
-			move $a0, $t4
-			syscall
-			
-			sb $a0, 0($t3)
+			sb $t4, 0($t3)
 			
 			addi $t2, $t2, 1
 			j encriptarWhile
@@ -208,7 +210,27 @@
 	jr $ra
 	
 	
-	
+	# Desencripta el mensaje que se obtuvo del
+	# documento criptogram aplicando el método
+	# Afín y utilizando las claves ingresadas
+	# por el usuario. Para aplicar el método
+	# Afin primero se debe calcular el inverso
+	# multiplicativo modular de la clave
+	# multiplicativa, para esto se llama la
+	# función calcularInversoMultiplicativoModular.
+	# Los registros $t2 a $t9 almacenan el contador
+	# que ayúdará a controlar el ciclo de recorrido
+	# de la pila, la posición en pila donde está el
+	# byte que se va a desencriptar, el byte que se
+	# va a encriptar, el valor ASCCI desde donde
+	# comienzan las letras minúsculas, el resultado
+	# de las operaciones que se deben hacer para
+	# aplicar el método Afin, el valor del módulo
+	# que se va a usar, el valor que usa el condicional
+	#  para saber si la letra que se va a encriptar
+	# es, mayúscula o minúscula y el valor del inverso
+	# multiplicativo que retorna la función
+	# calcularInversoMultiplicativoModular.
 	desencriptarMensaje:
 	
 		addi $sp, $sp, -4
@@ -219,19 +241,20 @@
 		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 		
-		addi $s0, $sp, 0
+		move $t9, $t4 # $t4 tiene el inverso
 		
-		move $t9, $t4 #tiene el inverso
-		
+		move $t7, $s2
+		li $t5, 97
 		add $t2, $zero, $zero
 		
 		desencriptarWhile:
-			add $t3, $t2, $s0
+		
+			add $t3, $t2, $sp
 			
 			lb $t4, 0($t3)
 			beq $t4, $zero, endDesencriptarWhile
 			
-    			li $t5, 97
+    			
     			sub $t6, $t4, $t5
     		
     			#----------------- Validar mayúsculas y minúsculas -----------------#		
@@ -240,10 +263,9 @@
 
 				sub $t6, $t6, $s5
 				bgez $t6, condicionalDesencriptarMinuscula
-    					add $t6, $t6, $s2
+    					add $t6, $t6, $t7
     				condicionalDesencriptarMinuscula:
     				mul $t6, $t6, $t9
-    				move $t7, $s2
     				div $t6, $t7
     				mfhi $t6
 
@@ -262,7 +284,6 @@
     					add $t6, $t6, $s2
     				condicionalDesencriptarMayuscula:
     				mul $t6, $t6, $t9
-    				move $t7, $s2
     				div $t6, $t7
     				mfhi $t6
 
@@ -272,11 +293,7 @@
     					
     			endCondicionalDesencriptar:
 			
-			li $v0, 11
-			move $a0, $t4
-			syscall
-			
-			sb $a0, 0($t3)
+			sb $t4, 0($t3)
 			
 			addi $t2, $t2, 1
 			j desencriptarWhile
@@ -297,12 +314,17 @@
 	
 	# Verifica que el contenido del documento
 	# de entrada no supere los 1024 bytes.
-	# Los registros $t4 a $t9 almacenan
-	# los bytes que se leen, la variable
-	# que controla el ciclo que recorre
-	# los caracteres del mensaje y los
-	# valores que retornan las operaciones
-	# condicionales
+	# Los registros $t4 a $t9 (exceptuando $t8)
+	# almacenan el contador que ayuda a controlar
+	# el recorrido de la cadena de caracteres,
+	# la dirección temporal de memoria donde se
+	# encuentra la cadena de caracteres que se
+	# leyó, los bytes que se leen, el número
+	# máximo de bytes permitidos en una cadena
+	# y el valor que usa el condicional para saber
+	# si el número de caracteres leidos excede
+	# el número permitido o no. Si lo excede,
+	# invoca a errorHandlerCantidadBytes.
 	validarCantidadBytes:
 	
 		li $t4, 0
@@ -327,12 +349,25 @@
 	jr $ra
 	
 	
-	
+	# Se encarga de calcular en inverso
+	# multiplicativo modular que se necesita
+	# para desencriptar un byte usando el 
+	# método Afin. El registro $t3 almacena
+	# el valor del módulo que se va a utilizar,
+	# $t4 a $t7 son los coeficientes
+	# del algoritmo de Euclides, $t8 almacena el
+	# valor del cociente de la división entre
+	# la clave multiplicativa y el módulo y $t9
+	# es un auxiliar para poder almacenar valores
+	# de las operaciones que se realizan.
+	# Esta función retorna el valor de $t4, que es
+	# el inverso multiplicativo de la clave
+	# multiplicativa.
 	calcularInversoMultiplicativoModular:
 	
-		move $s0, $s2
-
-    		move $t3, $s0
+    		move $t3, $s2
+    		li $t9, 0
+    		
     		li $t4, 1
     		li $t5, 0
     		li $t6, 0
@@ -370,7 +405,7 @@
 		endCalcularWhile:
 	
     		bgez $t4, fin
-    		add $t4, $t4, $s0
+    		add $t4, $t4, $s2
 
 		fin:
 	
