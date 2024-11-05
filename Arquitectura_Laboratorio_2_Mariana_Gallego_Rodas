@@ -3,7 +3,7 @@
 	inputFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/input.txt"
 	criptogramFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/criptogram.txt"
 	decodedFile: .asciiz "C:/Users/maria/OneDrive/Escritorio/Arquitectura_Laboratorio_2/decoded.txt"
-	mensajeAEncriptar: .space 1024
+	mensajeEncriptar: .space 1024
 
 	ClaveMultiplicativa: .asciiz "Digite la clave multiplicativa. Recuerde que debe ser un número COPRIMO con 26: "
 	ClaveAditiva: .asciiz "\nDigite la clave aditiva. Recuerde que debe ser un número entre 0 y 25: "
@@ -17,7 +17,7 @@
 		# Definición del valor del módulo
 		li $s2, 26
 	
-		# Llamada a ingresar mensaje
+		# Llamada a ingresar mensaje de inputFile
 		la $a3, inputFile
 		jal leerMensaje
 	
@@ -27,6 +27,7 @@
 		# Llamada a encriptar mensaje
 		jal encriptarMensaje
 		
+		# Llamada a ingresar mensaje de outputFile
 		la $a3, criptogramFile
 		jal leerMensaje
 		
@@ -68,7 +69,7 @@
     		#--------------------------- Leer archivo ---------------------------#
     		li $v0, 14
     		move $a0, $t0
-    		la $a1, mensajeAEncriptar
+    		la $a1, mensajeEncriptar
     		li $a2, 1024
     		syscall
     		
@@ -76,14 +77,14 @@
     		addi $sp, $sp, -4
 		sw $ra, 0($sp)
     		
-    		la $a3, mensajeAEncriptar
+    		la $a3, mensajeEncriptar
     		jal validarCantidadBytes
     		
     		lw $ra, 0($sp)
 		addi $sp, $sp, 4
 
 		#------------------- Guardar cada byte en la pila -------------------#
-		la $t1, mensajeAEncriptar
+		la $t1, mensajeEncriptar
 		#add $sp, $sp, $t4
 		li $t2, 0
 
@@ -220,7 +221,7 @@
 		
 		addi $s0, $sp, 0
 		
-		move $t9, $v1
+		move $t9, $t4 #tiene el inverso
 		
 		add $t2, $zero, $zero
 		
@@ -368,17 +369,10 @@
 
 		endCalcularWhile:
 	
-    		bgez $t4, mostrarInverso
+    		bgez $t4, fin
     		add $t4, $t4, $s0
-    		
-    		move $v1, $t4
 
-		mostrarInverso:
-    			li $v0, 1
-    			move $a0, $v1
-    			syscall
-    		
-    			jr $ra
+		fin:
 	
 	jr $ra
 	
@@ -406,7 +400,6 @@
     		bltz $t0, errorHandlerDocumento
 
     		addi $t1, $sp, 4
-    		addi $t1, $sp, 0
     		escribirWhile:
         		lb $a1, 0($t1)
         		beqz $a1, endEscribirWhile
