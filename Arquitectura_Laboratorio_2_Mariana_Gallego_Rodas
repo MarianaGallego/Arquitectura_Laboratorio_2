@@ -259,7 +259,8 @@
 		
 		move $t7, $s2
 		li $t5, 97
-		add $t2, $zero, $zero
+		li $t1, 65
+		li $t2, 0
 		
 		desencriptarWhile:
 		
@@ -290,8 +291,7 @@
     			j endCondicionalDesencriptar
     			elseCondicionalDesencriptar:
     					
-    				li $s3, 65
-    				sub $t6, $t4, $s3
+    				sub $t6, $t4, $t1
     					
     				sub $t6, $t6, $s5
     				bgez $t6, condicionalDesencriptarMayuscula
@@ -301,7 +301,7 @@
     				div $t6, $t7
     				mfhi $t6
 
-    				addi $t4, $t6, 65
+    				add $t4, $t6, $t1
     				
     				
     					
